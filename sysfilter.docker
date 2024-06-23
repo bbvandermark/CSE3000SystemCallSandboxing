@@ -1,0 +1,33 @@
+FROM ubuntu:20.04
+
+RUN apt-get update && apt-get install -y \
+	git
+
+WORKDIR /usr/src/app
+RUN mkdir -p /root/.ssh/
+COPY ./secret /root/.ssh/
+RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+RUN ssh-keyscan gitlab.com >> /root/.ssh/known_hosts
+RUN git clone --recurse-submodules git@gitlab.com:Egalito/sysfilter.git
+
+WORKDIR /usr/src/app/sysfilter/extraction
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get install -y \
+	gcc \
+	make \
+	gdb \
+	lsb-release \
+	g++ \
+	libreadline-dev
+RUN make
+
+RUN mkdir /usr/src/app/results
+COPY targets /usr/src/app/targets
+
+WORKDIR /usr/src/app/sysfilter/extraction/app
+RUN for BIN in /usr/src/app/targets/*; do \
+	./sysfilter_extract $BIN > /usr/src/app/results/$(basename "$BIN")_syscalls; \
+	done
+
+CMD ["sh"]
+

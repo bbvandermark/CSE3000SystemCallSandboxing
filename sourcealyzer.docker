@@ -1,0 +1,27 @@
+# Note, this dockerfile does not work. However, it is included for completeness.
+
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+	git
+WORKDIR /usr/src/app
+RUN git clone https://github.com/IAIK/Chestnut.git
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get install -y \
+	cmake \
+	ninja-build \
+	gcc \
+	build-essential \
+	python3 \
+	clang \
+	libseccomp-dev
+WORKDIR /usr/src/app/Chestnut/Sourcealyzer
+
+RUN sed -i "s|../../libchestnut/|/usr/src/app/Chestnut/libchestnut/|g" download_and_build.sh 
+RUN sed -i "s|-DENABLE_EXPERIMENTAL_NEW_PASS_MANAGER=true|-DENABLE_EXPERIMENTAL_NEW_PASS_MANAGER=true -DLLVM_ENABLE_PROJECTS=\"clang;clang-tools-extra\"|g" download_and_build.sh
+RUN ./download_and_build.sh
+
+CMD ["sh"]
+
+
